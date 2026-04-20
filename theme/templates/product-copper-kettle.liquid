@@ -1,0 +1,80 @@
+{% comment %}
+  product-copper-kettle.liquid
+  占位模板 — 零送样阶段使用，样品到手后替换实拍图和最终文案
+  PENDING_SAMPLE_VERIFICATION = true 时才允许发布
+{% endcomment %}
+
+<div class="product-page" data-sample-verified="{{ product.metafields.product_info.sample_verified }}">
+
+  {%- if product.metafields.product_info.sample_verified == 'false' -%}
+    <div class="sample-pending-banner" style="background:#fff3cd;padding:12px;margin-bottom:16px;border-left:4px solid #ffc107;">
+      ⚠️ 内部预览：样品待验收，此页面尚未对外发布
+    </div>
+  {%- endif -%}
+
+  <div class="product-media">
+    {%- if product.featured_image -%}
+      {{ product.featured_image | image_url: width: 800 | image_tag: alt: product.featured_image.alt }}
+    {%- else -%}
+      <div class="image-placeholder" style="background:#f5f0eb;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:#999;">
+        实拍图待上传（样品到手后）
+      </div>
+    {%- endif -%}
+  </div>
+
+  <div class="product-info">
+    <h1 class="product-title">{{ product.title }}</h1>
+
+    <div class="product-meta">
+      <span class="material-tag">{{ product.metafields.product_info.material_note }}</span>
+      <span class="origin-tag">{{ product.metafields.product_info.origin }}</span>
+    </div>
+
+    <div class="product-price">
+      {%- if product.variants.first.price == blank or product.variants.first.price == 0 -%}
+        <span class="price-pending">价格待定</span>
+      {%- else -%}
+        {{ product.variants.first.price | money }}
+      {%- endif -%}
+    </div>
+
+    {%- form 'product', product -%}
+      <div class="variant-selector">
+        {%- for option in product.options_with_values -%}
+          <label for="option-{{ forloop.index }}">{{ option.name }}</label>
+          <select id="option-{{ forloop.index }}" name="options[{{ option.name }}]">
+            {%- for value in option.values -%}
+              <option value="{{ value }}">{{ value }}</option>
+            {%- endfor -%}
+          </select>
+        {%- endfor -%}
+      </div>
+
+      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+
+      <button type="submit"
+        class="btn-add-to-cart"
+        {%- unless product.available -%}disabled{%- endunless -%}>
+        {%- if product.available -%}加入购物车{%- else -%}暂时缺货{%- endif -%}
+      </button>
+    {%- endform -%}
+
+    <div class="product-description">
+      {%- if product.description != blank -%}
+        {{ product.description }}
+      {%- else -%}
+        <p class="copy-pending" style="color:#999;font-style:italic;">文案待补充（运营填写后更新）</p>
+      {%- endif -%}
+    </div>
+
+    <div class="product-specs">
+      <h3>规格参数</h3>
+      <table>
+        <tr><th>壶体材质</th><td>紫铜（非银内壁款）</td></tr>
+        <tr><th>产地</th><td>{{ product.metafields.product_info.origin }}</td></tr>
+        <tr><th>制作工艺</th><td>手工锻打</td></tr>
+      </table>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,116 @@
+{
+  "_comment": "紫铜手冲咖啡壶 — 商品信息结构模板（零送样阶段占位版）",
+  "_status": "PENDING_SAMPLE_VERIFICATION",
+  "product": {
+    "title": "春喜 紫铜手冲咖啡壶",
+    "handle": "chunxi-copper-pour-over-kettle",
+    "vendor": "春喜铜器",
+    "product_type": "咖啡器具",
+    "tags": ["紫铜", "手冲", "咖啡壶", "手工锻打", "云南非遗"],
+    "status": "draft",
+    "body_html": "__PENDING_COPYWRITER__",
+    "variants": [
+      {
+        "title": "700cc / 黑桃木把手",
+        "sku": "CX-COFFEE-700-EBONY",
+        "price": "__PENDING_PRICING__",
+        "weight": 422,
+        "weight_unit": "g",
+        "inventory_management": "shopify",
+        "inventory_quantity": 0,
+        "requires_shipping": true,
+        "taxable": true,
+        "option1": "700cc",
+        "option2": "黑桃木把手",
+        "_spec": {
+          "body_material": "紫铜",
+          "lid_material": "紫铜",
+          "handle_material": "黑桃木",
+          "capacity_cc": 700,
+          "mouth_diameter_cm": 6.8,
+          "base_diameter_cm": 8.8,
+          "height_cm": 20,
+          "weight_g": 422
+        }
+      },
+      {
+        "title": "700cc / 黑桃木+紫铜把手",
+        "sku": "CX-COFFEE-700-EBONY-COPPER",
+        "price": "__PENDING_PRICING__",
+        "weight": 496,
+        "weight_unit": "g",
+        "inventory_management": "shopify",
+        "inventory_quantity": 0,
+        "requires_shipping": true,
+        "taxable": true,
+        "option1": "700cc",
+        "option2": "黑桃木+紫铜把手",
+        "_spec": {
+          "body_material": "紫铜",
+          "lid_material": "紫铜",
+          "handle_material": "黑桃木+紫铜",
+          "capacity_cc": 700,
+          "mouth_diameter_cm": 9.5,
+          "base_diameter_cm": 9.1,
+          "height_cm": 12,
+          "weight_g": 496
+        }
+      },
+      {
+        "title": "300cc / 白铜把手",
+        "sku": "CX-COFFEE-300-CUPRONICKEL",
+        "price": "__PENDING_PRICING__",
+        "weight": 290,
+        "weight_unit": "g",
+        "inventory_management": "shopify",
+        "inventory_quantity": 0,
+        "requires_shipping": true,
+        "taxable": true,
+        "option1": "300cc",
+        "option2": "白铜把手",
+        "_spec": {
+          "body_material": "紫铜",
+          "lid_material": null,
+          "handle_material": "白铜",
+          "capacity_cc": 300,
+          "mouth_diameter_cm": 7.2,
+          "base_diameter_cm": 6.6,
+          "height_cm": 9,
+          "weight_g": 290
+        }
+      }
+    ],
+    "options": [
+      { "name": "容量", "values": ["700cc", "300cc"] },
+      { "name": "把手材质", "values": ["黑桃木把手", "黑桃木+紫铜把手", "白铜把手"] }
+    ],
+    "images": [
+      {
+        "src": "__PENDING_SAMPLE_PHOTO__",
+        "alt": "春喜紫铜手冲咖啡壶 — 正面",
+        "_note": "样品到手后替换为实拍图"
+      }
+    ],
+    "metafields": [
+      {
+        "namespace": "product_info",
+        "key": "material_note",
+        "value": "纯紫铜壶体，非银内壁款",
+        "type": "single_line_text_field"
+      },
+      {
+        "namespace": "product_info",
+        "key": "sample_verified",
+        "value": "false",
+        "type": "boolean",
+        "_note": "样品验收后改为 true，触发上线 gating 检查"
+      },
+      {
+        "namespace": "product_info",
+        "key": "origin",
+        "value": "云南江川，手工锻打",
+        "type": "single_line_text_field"
+      }
+    ]
+  }
+}
