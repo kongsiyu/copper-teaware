@@ -1,10 +1,14 @@
 {% comment %}
   product-copper-kettle.liquid
   占位模板 — 零送样阶段使用，样品到手后替换实拍图和最终文案
-  PENDING_SAMPLE_VERIFICATION = true 时才允许发布
+  sample_verified = false 时只允许 notify-only 资料预览
 {% endcomment %}
 
-{%- assign sample_verified = product.metafields.product_info.sample_verified.value | default: false -%}
+{%- assign sample_verified_value = product.metafields.product_info.sample_verified.value | default: false -%}
+{%- assign sample_verified = false -%}
+{%- if sample_verified_value == true or sample_verified_value == 'true' -%}
+  {%- assign sample_verified = true -%}
+{%- endif -%}
 
 <div class="product-page" data-sample-verified="{{ sample_verified }}">
 
@@ -22,6 +26,11 @@
         实拍图待上传（样品到手后）
       </div>
     {%- endif -%}
+    {%- unless sample_verified -%}
+      <p class="media-note" style="margin-top:8px;color:#7a6b5d;font-size:14px;">
+        当前展示为资料图或占位图，样品验收后替换为实拍。
+      </p>
+    {%- endunless -%}
   </div>
 
   <div class="product-info">
@@ -30,6 +39,9 @@
     <div class="product-meta">
       <span class="material-tag">{{ product.metafields.product_info.material_note }}</span>
     </div>
+    <p class="sku-lock-note" style="margin:12px 0 0;color:#7a6b5d;">
+      当前只围绕这一款推进，不提供版本选择。
+    </p>
 
     <div class="product-price">
       {%- if sample_verified and product.variants.first.price != blank and product.variants.first.price != 0 -%}
@@ -41,16 +53,18 @@
 
     {%- if sample_verified -%}
       {%- form 'product', product -%}
-        <div class="variant-selector">
-          {%- for option in product.options_with_values -%}
-            <label for="option-{{ forloop.index }}">{{ option.name }}</label>
-            <select id="option-{{ forloop.index }}" name="options[{{ option.name }}]">
-              {%- for value in option.values -%}
-                <option value="{{ value }}">{{ value }}</option>
-              {%- endfor -%}
-            </select>
-          {%- endfor -%}
-        </div>
+        {%- unless product.has_only_default_variant -%}
+          <div class="variant-selector">
+            {%- for option in product.options_with_values -%}
+              <label for="option-{{ forloop.index }}">{{ option.name }}</label>
+              <select id="option-{{ forloop.index }}" name="options[{{ option.name }}]">
+                {%- for value in option.values -%}
+                  <option value="{{ value }}">{{ value }}</option>
+                {%- endfor -%}
+              </select>
+            {%- endfor -%}
+          </div>
+        {%- endunless -%}
 
         <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
 
@@ -96,7 +110,7 @@
     <div class="product-specs">
       <h3>规格参数</h3>
       <table>
-        <tr><th>壶体材质</th><td>紫铜（非银内壁款）</td></tr>
+        <tr><th>壶体材质</th><td>紫铜（非银内壁版本）</td></tr>
         <tr><th>把手/盖钮</th><td>电木（待样品复核）</td></tr>
         <tr><th>容量</th><td>约 500 cc（图册数据，待样品复核）</td></tr>
       </table>
