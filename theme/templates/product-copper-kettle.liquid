@@ -4,13 +4,15 @@
   PENDING_SAMPLE_VERIFICATION = true 时才允许发布
 {% endcomment %}
 
-<div class="product-page" data-sample-verified="{{ product.metafields.product_info.sample_verified }}">
+{%- assign sample_verified = product.metafields.product_info.sample_verified.value | default: false -%}
 
-  {%- if product.metafields.product_info.sample_verified == 'false' -%}
+<div class="product-page" data-sample-verified="{{ sample_verified }}">
+
+  {%- unless sample_verified -%}
     <div class="sample-pending-banner" style="background:#fff3cd;padding:12px;margin-bottom:16px;border-left:4px solid #ffc107;">
-      ⚠️ 内部预览：样品待验收，此页面尚未对外发布
+      ⚠️ 资料预览：样品待验收，目前只开放到货通知，不开放正式下单
     </div>
-  {%- endif -%}
+  {%- endunless -%}
 
   <div class="product-media">
     {%- if product.featured_image -%}
@@ -31,33 +33,67 @@
     </div>
 
     <div class="product-price">
-      {%- if product.variants.first.price == blank or product.variants.first.price == 0 -%}
-        <span class="price-pending">价格待定</span>
-      {%- else -%}
+      {%- if sample_verified and product.variants.first.price != blank and product.variants.first.price != 0 -%}
         {{ product.variants.first.price | money }}
+      {%- else -%}
+        <span class="price-pending">价格待样品验收后公布</span>
       {%- endif -%}
     </div>
 
-    {%- form 'product', product -%}
-      <div class="variant-selector">
-        {%- for option in product.options_with_values -%}
-          <label for="option-{{ forloop.index }}">{{ option.name }}</label>
-          <select id="option-{{ forloop.index }}" name="options[{{ option.name }}]">
-            {%- for value in option.values -%}
-              <option value="{{ value }}">{{ value }}</option>
-            {%- endfor -%}
-          </select>
-        {%- endfor -%}
+    {%- if sample_verified -%}
+      {%- form 'product', product -%}
+        <div class="variant-selector">
+          {%- for option in product.options_with_values -%}
+            <label for="option-{{ forloop.index }}">{{ option.name }}</label>
+            <select id="option-{{ forloop.index }}" name="options[{{ option.name }}]">
+              {%- for value in option.values -%}
+                <option value="{{ value }}">{{ value }}</option>
+              {%- endfor -%}
+            </select>
+          {%- endfor -%}
+        </div>
+
+        <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+
+        <button type="submit"
+          class="btn-add-to-cart"
+          {%- unless product.available -%}disabled{%- endunless -%}>
+          {%- if product.available -%}加入购物车{%- else -%}暂时缺货{%- endif -%}
+        </button>
+      {%- endform -%}
+    {%- else -%}
+      <div class="variant-preview" style="margin:16px 0;">
+        <h3>当前规划版本</h3>
+        <ul style="padding-left:18px;margin:8px 0;">
+          {%- for variant in product.variants -%}
+            <li>{{ variant.title }}</li>
+          {%- endfor -%}
+        </ul>
       </div>
 
-      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
-
-      <button type="submit"
-        class="btn-add-to-cart"
-        {%- unless product.available -%}disabled{%- endunless -%}>
-        {%- if product.available -%}加入购物车{%- else -%}暂时缺货{%- endif -%}
-      </button>
-    {%- endform -%}
+      <div id="notify-interest" class="notify-interest" style="background:#f7f3ee;padding:16px;border:1px solid #dbcbbd;">
+        <h3 style="margin-top:0;">到货通知</h3>
+        <p style="margin-top:0;">样品验收、定价和正式上架完成后，第一时间通知你。当前不锁定库存，也不承诺价格和发货时间。</p>
+        {%- form 'customer' -%}
+          <input type="hidden" name="contact[tags]" value="notify-{{ product.handle }}">
+          <input
+            type="email"
+            name="contact[email]"
+            placeholder="输入邮箱，获取到货通知"
+            required
+            style="min-width:240px;padding:10px;border:1px solid #cdbcae;margin-right:8px;">
+          <button type="submit" class="btn-notify" style="padding:10px 16px;background:#4d3727;color:#fff;border:0;">
+            到货通知我
+          </button>
+          {%- if form.posted_successfully? -%}
+            <p style="margin-bottom:0;color:#2f6f3e;">已收到你的邮箱，正式到货后会发送通知。</p>
+          {%- endif -%}
+          {%- if form.errors -%}
+            <p style="margin-bottom:0;color:#a94442;">请填写有效邮箱后再提交。</p>
+          {%- endif -%}
+        {%- endform -%}
+      </div>
+    {%- endif -%}
 
     <div class="product-description">
       {%- if product.description != blank -%}
