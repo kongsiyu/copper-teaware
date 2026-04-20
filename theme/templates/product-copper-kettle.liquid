@@ -29,7 +29,6 @@
 
     <div class="product-meta">
       <span class="material-tag">{{ product.metafields.product_info.material_note }}</span>
-      <span class="origin-tag">{{ product.metafields.product_info.origin }}</span>
     </div>
 
     <div class="product-price">
@@ -62,15 +61,6 @@
         </button>
       {%- endform -%}
     {%- else -%}
-      <div class="variant-preview" style="margin:16px 0;">
-        <h3>当前规划版本</h3>
-        <ul style="padding-left:18px;margin:8px 0;">
-          {%- for variant in product.variants -%}
-            <li>{{ variant.title }}</li>
-          {%- endfor -%}
-        </ul>
-      </div>
-
       <div id="notify-interest" class="notify-interest" style="background:#f7f3ee;padding:16px;border:1px solid #dbcbbd;">
         <h3 style="margin-top:0;">到货通知</h3>
         <p style="margin-top:0;">样品验收、定价和正式上架完成后，第一时间通知你。当前不锁定库存，也不承诺价格和发货时间。</p>
@@ -107,8 +97,8 @@
       <h3>规格参数</h3>
       <table>
         <tr><th>壶体材质</th><td>紫铜（非银内壁款）</td></tr>
-        <tr><th>产地</th><td>{{ product.metafields.product_info.origin }}</td></tr>
-        <tr><th>制作工艺</th><td>手工锻打</td></tr>
+        <tr><th>把手/盖钮</th><td>电木（待样品复核）</td></tr>
+        <tr><th>容量</th><td>约 500 cc（图册数据，待样品复核）</td></tr>
       </table>
     </div>
   </div>
