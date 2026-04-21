@@ -21,11 +21,11 @@
 
 | # | 接入项 | 用途 | 风险 |
 | --- | --- | --- | --- |
-| 1 | **Shopify Admin API access token** | 商品创建、metafield 写入、主题管理 | token 需要最小权限范围（见下方 scopes），不要给全权限 |
+| 1 | **Shopify Dev Dashboard Client ID / Client Secret** | 运行时交换 24h Admin API access token，用于商品创建、metafield 写入、主题管理 | secret 需要存入运行时 secret 管理，不进代码、不进 issue 评论 |
 | 2 | **Store domain**（如 `copper-teaware.myshopify.com`） | API 请求目标 | 无风险，公开信息 |
 | 3 | **Shopify MCP 配置**（如果 board 提供 MCP server） | CTO agent 直接调用 | MCP server 需要在 agent 环境中可访问 |
 
-说明：当前仓库和脚本走的是 **Admin API token** 路径，不消费 `SHOPIFY_CLIENT_ID` / `SHOPIFY_SECRET` 这一组 OAuth 应用凭据；除非后续单独落地一个 OAuth app backend，否则不需要把这两个值继续分发到别的系统或仓库。
+说明：新版 Shopify Dev Dashboard 推荐使用 client credentials 在运行时交换 access token。仓库环境变量统一按官方命名使用 `SHOPIFY_CLIENT_ID` / `SHOPIFY_CLIENT_SECRET`，并临时兼容现有 secret-manager 里的 `SHOPIFY_CLINET_ID` / `SHOPIFY_SECRET`；`SHOPIFY_ADMIN_API_TOKEN` 仅作为已经换好 access token 时的 legacy fallback。
 
 **最小 API scopes（Admin API）：**
 
@@ -41,9 +41,9 @@ read_content, write_content
 
 ### 1.3 接入顺序与风险
 
-1. **先接 Admin API**（低风险，只读写商品和主题）
-   - 用于：创建 draft 商品、设置 `sample_verified=false` metafield、推送 PDP 模板
-   - 风险：token 泄露风险 → 存入环境变量，不进代码仓库
+1. **先接 Dev Dashboard client credentials**（低风险，只读写商品和主题）
+   - 用于：运行时交换 24h access token，再创建 draft 商品、设置 `sample_verified=false` metafield、推送 PDP 模板
+   - 风险：client secret 泄露风险 → 存入运行时 secret 管理，不进代码仓库、不进 issue 评论
 
 2. **再接 MCP**（中风险，需要 MCP server 稳定）
    - 用于：CTO agent heartbeat 中直接执行 Shopify 操作
@@ -55,7 +55,7 @@ read_content, write_content
 
 需要用户在 Shopify 后台操作：
 
-1. **生成 Admin API token**：Shopify Admin → Settings → Apps and sales channels → Develop apps → Create an app → 配置 scopes → Install app → 复制 Admin API access token
+1. **提供 Dev Dashboard Client ID / Client Secret**：Shopify Dev Dashboard 对应 app → API credentials
 2. **提供 store domain**：Settings → Domains → 主域名
 3. **（可选）提供 MCP 配置**：如果 board 已有 Shopify MCP server，提供连接配置
 
@@ -108,19 +108,19 @@ read_content, write_content
 
 | 模块 | 状态 | 说明 |
 | --- | --- | --- |
-| **首页（Homepage）** | ✅ 已具备 | `theme/templates/index.json`，7 sections 已配置 |
+| **首页（Homepage）** | ✅ 已具备 | `theme/templates/index.json`，8 sections 已配置 |
 | **商品详情页 PDP** | ✅ 已具备 | `theme/templates/product-copper-kettle.liquid`，含 sample_verified 熔断 |
 | **导航 / 页头 / 页脚** | ✅ 骨架已有，待后台执行 | `theme/config/nav-footer.json`，需在 Shopify Admin > Navigation 创建菜单 |
 | **集合页（Collection）** | ❌ 待补 | 当前无集合页模板；单 SKU 阶段可用默认集合页，但需要配置 |
 | **政策页（Policy）** | ❌ 待补 | 退换货政策、隐私政策、配送政策；Shopify 内置政策页，需填写内容 |
-| **FAQ / 内容页** | ⚠️ 部分具备 | PDP 和首页已有 FAQ section；独立 FAQ 页面待补 |
+| **FAQ / 内容页** | ✅ 已具备模板，待后台绑定 | `theme/templates/page.preview-stage.liquid`、`page.research-notes.liquid`、`page.faq.liquid` 已写好；需在 Shopify Admin > Pages 创建句柄并选择模板 |
 | **关于页（About）** | ❌ 待补 | 零送样阶段可后置；品牌故事待运营输入 |
 | **表单与埋点** | ✅ 骨架已有，待后台执行 | `theme/config/analytics-email.json`，需填入 GA4 Measurement ID |
 
 ### 3.2 各模块详细状态
 
 #### 首页
-- **已具备**：7 sections（公告条、Hero、信息卡、器型说明、使用场景、透明说明区、FAQ、到货通知 CTA）
+- **已具备**：8 sections（公告条、Hero、信息卡、器型说明、研究记录预告、透明说明区、FAQ、到货通知 CTA）
 - **待补**：Hero 主图（运营提供）；Hero 文案（运营确认）
 - **需要 UX/运营输入**：Hero 主图（图册主图或占位图）
 
@@ -139,8 +139,11 @@ read_content, write_content
 - **需要 UX/运营输入**：政策内容确认（可用 Shopify 模板生成，运营审核）
 
 #### FAQ / 内容页
-- **部分具备**：首页和 PDP 已有 FAQ section（6 条核心问答）
-- **待补**：独立 FAQ 页面（`/pages/faq`）；可用 Shopify 页面编辑器创建，不需要代码
+- **已具备**：3 个独立 preview-only 页面模板：
+  - `page.preview-stage` → `/pages/preview-stage`
+  - `page.research-notes` → `/pages/research-notes`
+  - `page.faq` → `/pages/faq`
+- **后台执行项**：在 Shopify 页面编辑器创建对应 page handle，并绑定模板；如希望直接使用仓库里的默认正文，页面正文保持空白即可
 - **需要 UX/运营输入**：FAQ 内容（已有草稿，运营确认即可）
 
 #### 关于页
@@ -166,7 +169,7 @@ read_content, write_content
 | 类型 | 内容 | 运营是否需要接触代码 | 优先级 |
 | --- | --- | --- | --- |
 | **Schema（技术定义）** | `product-schema.json`（商品字段结构）、metafield 定义 | 否，只需了解字段含义 | 技术侧维护 |
-| **Section（主题编辑器配置）** | 首页 7 sections、PDP sections | 否，在 Shopify 主题编辑器直接操作 | 运营可自主操作 |
+| **Section（主题编辑器配置）** | 首页 8 sections、PDP sections | 否，在 Shopify 主题编辑器直接操作 | 运营可自主操作 |
 | **Config（配置文件）** | `nav-footer.json`（导航结构）、`analytics-email.json`（分析配置） | 否，按配置在 Shopify Admin 后台操作 | 技术侧提供，运营执行 |
 | **Assets（素材）** | Hero 主图、器型说明图、品牌 logo | 否，上传到 Shopify Files | 运营提供，技术侧挂载 |
 
@@ -182,7 +185,8 @@ read_content, write_content
    - 修改 metafield 值（需要技术侧先定义 metafield schema）
 
 3. **页面管理**（Shopify Admin → Online Store → Pages）：
-   - 创建和编辑 FAQ 页面、关于页
+   - 创建和编辑 `preview-stage`、`research-notes`、`faq` 页面
+   - 如需直接使用仓库模板内默认正文，页面正文保持空白
    - 不需要接触代码
 
 4. **政策页**（Shopify Admin → Settings → Policies）：
@@ -219,22 +223,25 @@ read_content, write_content
 | 维度 | 状态 | 说明 |
 | --- | --- | --- |
 | 主题基线 | ✅ Ready | Wokiee Artisan Workshop，GitHub 集成已接通 |
-| 首页技术骨架 | ✅ Ready | 7 sections 已配置，等运营提供 Hero 图 |
+| 首页技术骨架 | ✅ Ready | 8 sections 已配置，等运营提供 Hero 图 |
 | PDP 技术骨架 | ✅ Ready | sample_verified 熔断已就绪 |
+| FAQ / 内容页模板 | ✅ Ready | `page.preview-stage`、`page.research-notes`、`page.faq` 已写好，待后台创建页面并绑定 |
 | 导航 / 页脚 | ✅ 骨架 Ready，待后台执行 | 需在 Shopify Admin 创建菜单 |
 | 邮件收集 | ✅ 骨架 Ready，待后台执行 | 需接通 Shopify 原生表单或 Klaviyo |
 | GA4 分析 | ✅ 骨架 Ready，待后台执行 | 需填入 Measurement ID |
-| Shopify API 接入 | ❌ **唯一 Blocker** | 需要 board 提供 Admin API token + store domain |
+| Theme 静态校验 | ✅ Ready | `jq` 校验通过，`shopify theme check --path theme` 结果为 `9 files inspected with no offenses found` |
+| Shopify API 接入 | ❌ **唯一 Blocker** | 需要 board 提供 Client ID / Client Secret + store domain |
 | 集合页 | ⚠️ 可用默认，待配置 | 单 SKU 阶段用默认集合页即可 |
 | 政策页 | ⚠️ 待填写 | 需运营填写政策内容 |
 
 ### 唯一 Blocker
 
-**Board 需要提供 Shopify Admin API access token 和 store domain。**
+**Board 需要提供 Shopify Dev Dashboard Client ID / Client Secret 和 store domain。**
 
 有了 API 凭证，技术侧可以：
-1. 通过 API 直接创建 draft 商品（不再依赖 CEO 手动操作）
-2. 通过 API 设置 `sample_verified=false` metafield
+1. 通过 client credentials 交换 24h access token
+2. 通过 API 直接创建 draft 商品（不再依赖 CEO 手动操作）
+3. 通过 API 设置 `sample_verified=false` metafield
 3. 通过 MCP 在 agent heartbeat 中直接执行 Shopify 操作
 4. 消除 Capsule Preview 阶段遗留的所有"需 CEO/运营手动在 Shopify 后台操作"的 blocker
 
@@ -244,8 +251,9 @@ read_content, write_content
 
 | 优先级 | 行动 | 负责方 | 阻塞条件 |
 | --- | --- | --- | --- |
-| P0 | 提供 Shopify Admin API token + store domain | Board / CEO | 无阻塞，立即可操作 |
+| P0 | 提供 Shopify Client ID / Client Secret + store domain | Board / CEO | 无阻塞，立即可操作 |
 | P1 | 通过 API 创建 draft 商品 + 设置 metafield | CTO | 依赖 P0 |
+| P1 | 在 Shopify Admin 创建 `preview-stage` / `research-notes` / `faq` 页面并绑定模板 | CEO / 运营 | 无阻塞 |
 | P1 | 在 Shopify Admin 创建导航菜单 | CEO / 运营 | 无阻塞 |
 | P1 | 上传 Hero 主图到 Shopify Files | 运营 | 需要图册主图 |
 | P2 | 填写政策页内容 | 运营 | 无阻塞 |

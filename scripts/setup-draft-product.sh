@@ -5,7 +5,11 @@
 #
 # 前提：复制 .env.example 为 .env 并填入真实凭据，或在环境中设置：
 #   SHOPIFY_STORE_DOMAIN      — 如 copper-teaware.myshopify.com
-#   SHOPIFY_ADMIN_API_TOKEN   — Shopify Admin API access token（不要写入代码或 issue 评论）
+#   SHOPIFY_CLIENT_ID         — Shopify Dev Dashboard client id
+#   SHOPIFY_CLIENT_SECRET     — Shopify Dev Dashboard client secret
+#   （兼容别名：SHOPIFY_CLINET_ID / SHOPIFY_SECRET）
+#   或者：
+#   SHOPIFY_ADMIN_API_TOKEN   — 已换好的 Shopify Admin API access token（legacy fallback）
 # 用法：bash scripts/setup-draft-product.sh
 
 set -euo pipefail
@@ -17,7 +21,15 @@ if [[ -f "$(dirname "$0")/../.env" ]]; then
 fi
 
 : "${SHOPIFY_STORE_DOMAIN:?需要设置 SHOPIFY_STORE_DOMAIN 环境变量}"
-: "${SHOPIFY_ADMIN_API_TOKEN:?需要设置 SHOPIFY_ADMIN_API_TOKEN 环境变量}"
+
+SHOPIFY_CLIENT_ID="${SHOPIFY_CLIENT_ID:-${SHOPIFY_CLINET_ID:-}}"
+SHOPIFY_CLIENT_SECRET="${SHOPIFY_CLIENT_SECRET:-${SHOPIFY_SECRET:-}}"
+SHOPIFY_ADMIN_API_TOKEN="${SHOPIFY_ADMIN_API_TOKEN:-}"
+
+if [[ -z "$SHOPIFY_ADMIN_API_TOKEN" ]]; then
+  : "${SHOPIFY_CLIENT_ID:?需要设置 SHOPIFY_CLIENT_ID（或兼容别名 SHOPIFY_CLINET_ID）环境变量}"
+  : "${SHOPIFY_CLIENT_SECRET:?需要设置 SHOPIFY_CLIENT_SECRET（或兼容别名 SHOPIFY_SECRET）环境变量}"
+fi
 
 PRODUCT_HANDLE="copper-bottle-pour-over-kettle"
 PRODUCT_TITLE="紫铜水瓶手冲咖啡壶"
@@ -28,6 +40,13 @@ VARIANT_SKU="CX-COFFEE-KETTLE-01"
 VARIANT_PRICE="0.00"  # 价格待样品验收后填写，draft 阶段设为 0
 
 echo "=== Capsule Preview 商品创建指引 ==="
+echo ""
+echo "=== Shopify 凭据检查 ==="
+if [[ -n "$SHOPIFY_ADMIN_API_TOKEN" ]]; then
+  echo "   认证方式：使用已提供的 Admin API access token"
+else
+  echo "   认证方式：运行时使用 Client ID + Client Secret 交换 24h access token"
+fi
 echo ""
 echo "以下操作需在 Shopify 后台手动完成（Admin > Products > Add product）："
 echo ""
