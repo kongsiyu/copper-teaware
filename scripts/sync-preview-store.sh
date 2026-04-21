@@ -12,12 +12,15 @@ THEME_DIR="$ROOT_DIR/theme"
 API_VERSION="${SHOPIFY_API_VERSION:-2025-01}"
 
 PRODUCT_HANDLE="copper-bottle-pour-over-kettle"
-PRODUCT_TITLE="紫铜水瓶手冲咖啡壶"
-PRODUCT_TYPE="咖啡器具"
+PRODUCT_TITLE="Copper Pour-Over Kettle With a Bottle-Shaped Silhouette"
+PRODUCT_TYPE="Coffeeware"
 PRODUCT_TEMPLATE_SUFFIX="copper-kettle"
+PUBLIC_PREVIEW_PAGE_HANDLE="copper-kettle-preview"
+PUBLIC_PREVIEW_PAGE_TITLE="Product Details"
+PUBLIC_PREVIEW_TEMPLATE_SUFFIX="copper-kettle-preview"
 PRODUCT_SKU="CX-COFFEE-KETTLE-01"
 PRODUCT_PRICE="0.00"
-MATERIAL_NOTE="紫铜壶体，非银内壁版本"
+MATERIAL_NOTE="Copper body"
 
 log() {
   printf '%s\n' "$*" >&2
@@ -440,7 +443,9 @@ build_theme_files_json() {
 log "Upserting preview theme support files"
 upsert_theme_files \
   "$(build_theme_files_json \
+    "snippets/preview-launch-theme.liquid" \
     "snippets/preview-page-shell.liquid" \
+    "snippets/preview-product-dossier.liquid" \
     "sections/preview-homepage.liquid")" \
   'themeFilesUpsert support files'
 
@@ -448,6 +453,7 @@ log "Upserting preview theme templates"
 upsert_theme_files \
   "$(build_theme_files_json \
     "templates/product-copper-kettle.liquid" \
+    "templates/page.copper-kettle-preview.liquid" \
     "templates/page.preview-stage.liquid" \
     "templates/page.research-notes.liquid" \
     "templates/page.faq.liquid")" \
@@ -496,9 +502,10 @@ ensure_page() {
   fi
 }
 
-preview_stage_page_id="$(ensure_page 'preview-stage' '资料预览阶段说明' 'preview-stage')"
-research_notes_page_id="$(ensure_page 'research-notes' '当前阶段研究记录' 'research-notes')"
-faq_page_id="$(ensure_page 'faq' '常见问题' 'faq')"
+public_preview_page_id="$(ensure_page "$PUBLIC_PREVIEW_PAGE_HANDLE" "$PUBLIC_PREVIEW_PAGE_TITLE" "$PUBLIC_PREVIEW_TEMPLATE_SUFFIX")"
+preview_stage_page_id="$(ensure_page 'preview-stage' 'Preview Terms' 'preview-stage')"
+research_notes_page_id="$(ensure_page 'research-notes' 'Research Notes' 'research-notes')"
+faq_page_id="$(ensure_page 'faq' 'FAQ' 'faq')"
 
 product_body_html="$(jq -r '.product.body_html' "$THEME_DIR/product-schema.json")"
 log "Updating draft product"
@@ -518,7 +525,7 @@ product_response="$(
             title: $title,
             handle: $handle,
             productType: $productType,
-            tags: ["紫铜", "手冲", "咖啡壶"],
+            tags: ["copper", "pour-over", "preview-only"],
             status: "DRAFT",
             templateSuffix: $templateSuffix,
             descriptionHtml: $descriptionHtml
@@ -607,9 +614,9 @@ require_no_top_level_errors "$metafields_response" 'metafieldsSet'
 require_no_user_errors "$metafields_response" '.data.metafieldsSet.userErrors' 'metafieldsSet'
 
 privacy_policy_body="$(cat <<'HTML'
-<p>我们当前只使用邮箱接收这款产品的到货通知和相关公开更新。</p>
-<p>当前店铺处于资料预览阶段，不开放购买、预订或候补。提交邮箱不代表购买资格、库存锁定或交付承诺。</p>
-<p>我们不会把该邮箱用于与本产品无关的销售动作。如不再需要通知，可在邮件中取消订阅。</p>
+<p>Email sign-up is used for updates on this product only.</p>
+<p>This site is in product-preview mode. It does not offer checkout, preorder, waitlist, or any purchase commitment at this stage.</p>
+<p>If updates are no longer needed, subscribers can opt out from the email footer.</p>
 HTML
 )"
 
@@ -674,14 +681,14 @@ ensure_menu() {
 
 main_menu_items="$(
   jq -nc \
-    --arg productId "$product_id" \
-    --arg researchPageId "$research_notes_page_id" \
+    --arg publicPreviewPageId "$public_preview_page_id" \
+    --arg faqPageId "$faq_page_id" \
     --arg notifyUrl "${STOREFRONT_BASE_URL}/#notify-cta" \
     '[
-      {title: "首页", type: "FRONTPAGE"},
-      {title: "紫铜咖啡壶", type: "PRODUCT", resourceId: $productId},
-      {title: "研究记录", type: "PAGE", resourceId: $researchPageId},
-      {title: "到货通知", type: "HTTP", url: $notifyUrl}
+      {title: "Home", type: "FRONTPAGE"},
+      {title: "Product Details", type: "PAGE", resourceId: $publicPreviewPageId},
+      {title: "FAQ", type: "PAGE", resourceId: $faqPageId},
+      {title: "Notify Me", type: "HTTP", url: $notifyUrl}
     ]'
 )"
 
@@ -691,9 +698,9 @@ footer_menu_items="$(
     --arg faqPageId "$faq_page_id" \
     --arg privacyUrl "${STOREFRONT_BASE_URL}/policies/privacy-policy" \
     '[
-      {title: "当前阶段说明", type: "PAGE", resourceId: $previewPageId},
-      {title: "常见问题", type: "PAGE", resourceId: $faqPageId},
-      {title: "隐私说明", type: "HTTP", url: $privacyUrl}
+      {title: "Preview Terms", type: "PAGE", resourceId: $previewPageId},
+      {title: "FAQ", type: "PAGE", resourceId: $faqPageId},
+      {title: "Privacy Policy", type: "HTTP", url: $privacyUrl}
     ]'
 )"
 
@@ -724,7 +731,7 @@ printf '%s\n' "$final_state" | jq '{
   ),
   pages: (
     .data.pages.nodes
-    | map(select(.handle as $h | ["preview-stage", "research-notes", "faq"] | index($h)))
+    | map(select(.handle as $h | ["copper-kettle-preview", "preview-stage", "research-notes", "faq"] | index($h)))
     | map({id, handle, title, templateSuffix, isPublished})
   ),
   menus: (
@@ -737,6 +744,7 @@ printf '%s\n' "$final_state" | jq '{
 printf '\n=== Storefront HTTP probe ===\n'
 for path in \
   "/" \
+  "/pages/${PUBLIC_PREVIEW_PAGE_HANDLE}" \
   "/pages/preview-stage" \
   "/pages/research-notes" \
   "/pages/faq" \
