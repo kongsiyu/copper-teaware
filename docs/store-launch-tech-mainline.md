@@ -25,6 +25,8 @@
 | 2 | **Store domain**（如 `copper-teaware.myshopify.com`） | API 请求目标 | 无风险，公开信息 |
 | 3 | **Shopify MCP 配置**（如果 board 提供 MCP server） | CTO agent 直接调用 | MCP server 需要在 agent 环境中可访问 |
 
+说明：当前仓库和脚本走的是 **Admin API token** 路径，不消费 `SHOPIFY_CLIENT_ID` / `SHOPIFY_SECRET` 这一组 OAuth 应用凭据；除非后续单独落地一个 OAuth app backend，否则不需要把这两个值继续分发到别的系统或仓库。
+
 **最小 API scopes（Admin API）：**
 
 ```
