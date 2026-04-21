@@ -52,10 +52,14 @@ request_token() {
     if printf '%s' "$body" | jq -e . >/dev/null 2>&1; then
       printf '%s\n' "$body" | jq -r '.error_description // .error // .errors // .message // tostring' >&2
     else
-      printf '%s\n' "$body" \
-        | tr '\n' ' ' \
-        | sed -E 's/<[^>]+>/ /g; s/&quot;/"/g; s/&amp;/\&/g; s/[[:space:]]+/ /g' \
-        | grep -oE 'Oauth error [^<]+' \
+      sanitized_body="$(
+        printf '%s\n' "$body" \
+          | perl -0pe 's/<style\b[^>]*>.*?<\/style>//gs; s/<script\b[^>]*>.*?<\/script>//gs' \
+          | tr '\n' ' ' \
+          | sed -E 's/<[^>]+>/ /g; s/&quot;/"/g; s/&amp;/\&/g; s/[[:space:]]+/ /g'
+      )"
+      printf '%s\n' "$sanitized_body" \
+        | sed -nE 's/.*(Oauth error [A-Za-z0-9_]+: [^.]+).*/\1/p' \
         | head -n1 >&2 || true
     fi
     return 1
