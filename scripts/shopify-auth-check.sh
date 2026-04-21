@@ -32,6 +32,7 @@ fi
 
 last_token_error=""
 detected_mapping="configured"
+token_response=""
 
 request_token() {
   local client_id="$1"
@@ -118,17 +119,20 @@ if [[ -n "$SHOPIFY_ADMIN_API_TOKEN" ]]; then
   access_token="$SHOPIFY_ADMIN_API_TOKEN"
   echo "Auth mode: legacy access token"
 else
+  token_response_file="$(mktemp)"
+  trap 'rm -f "$token_response_file"' EXIT
   auth_mode="client_credentials"
   echo "Auth mode: client credentials grant"
-  if token_response="$(request_token "$SHOPIFY_CLIENT_ID" "$SHOPIFY_CLIENT_SECRET")"; then
+  if request_token "$SHOPIFY_CLIENT_ID" "$SHOPIFY_CLIENT_SECRET" >"$token_response_file"; then
     detected_mapping="configured"
   elif [[ "$last_token_error" == *"application_cannot_be_found"* ]]; then
     echo "Detected possible swapped client id / client secret mapping; retrying with swapped values." >&2
-    token_response="$(request_token "$SHOPIFY_CLIENT_SECRET" "$SHOPIFY_CLIENT_ID")"
+    request_token "$SHOPIFY_CLIENT_SECRET" "$SHOPIFY_CLIENT_ID" >"$token_response_file"
     detected_mapping="swapped_runtime_values"
   else
     exit 1
   fi
+  token_response="$(cat "$token_response_file")"
   access_token="$(printf '%s\n' "$token_response" | jq -r '.access_token')"
   token_scope="$(printf '%s\n' "$token_response" | jq -r '.scope')"
   token_expires_in="$(printf '%s\n' "$token_response" | jq -r '.expires_in')"
