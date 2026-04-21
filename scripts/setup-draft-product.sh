@@ -8,6 +8,8 @@
 #   SHOPIFY_CLIENT_ID         — Shopify Dev Dashboard client id
 #   SHOPIFY_CLIENT_SECRET     — Shopify Dev Dashboard client secret
 #   （兼容别名：SHOPIFY_CLINET_ID / SHOPIFY_SECRET）
+#   注意：当前 secret-manager 里若沿用旧命名，可能存在值反向映射：
+#         SHOPIFY_CLINET_ID 实际装的是 secret，SHOPIFY_SECRET 实际装的是 client id
 #   或者：
 #   SHOPIFY_ADMIN_API_TOKEN   — 已换好的 Shopify Admin API access token（legacy fallback）
 # 用法：bash scripts/setup-draft-product.sh
@@ -46,6 +48,7 @@ if [[ -n "$SHOPIFY_ADMIN_API_TOKEN" ]]; then
   echo "   认证方式：使用已提供的 Admin API access token"
 else
   echo "   认证方式：运行时使用 Client ID + Client Secret 交换 24h access token"
+  echo "   兼容说明：若 secret-manager 里仍是旧命名，脚本会继续读取 SHOPIFY_CLINET_ID / SHOPIFY_SECRET"
 fi
 echo ""
 echo "以下操作需在 Shopify 后台手动完成（Admin > Products > Add product）："

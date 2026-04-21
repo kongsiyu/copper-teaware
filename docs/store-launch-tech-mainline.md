@@ -27,6 +27,8 @@
 
 说明：新版 Shopify Dev Dashboard 推荐使用 client credentials 在运行时交换 access token。仓库环境变量统一按官方命名使用 `SHOPIFY_CLIENT_ID` / `SHOPIFY_CLIENT_SECRET`，并临时兼容现有 secret-manager 里的 `SHOPIFY_CLINET_ID` / `SHOPIFY_SECRET`；`SHOPIFY_ADMIN_API_TOKEN` 仅作为已经换好 access token 时的 legacy fallback。
 
+2026-04-21 实测补充：当前运行环境里的旧命名值是**反向装入**的，`SHOPIFY_CLINET_ID` 实际对应 client secret，`SHOPIFY_SECRET` 实际对应 client id。若按变量字面直接使用，会触发 `application_cannot_be_found`；交换后即可成功换取 24 小时 access token。
+
 **最小 API scopes（Admin API）：**
 
 ```

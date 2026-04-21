@@ -30,18 +30,24 @@ if [[ -z "$SHOPIFY_ADMIN_API_TOKEN" ]]; then
   : "${SHOPIFY_CLIENT_SECRET:?需要设置 SHOPIFY_CLIENT_SECRET（或兼容别名 SHOPIFY_SECRET）环境变量}"
 fi
 
+last_token_error=""
+detected_mapping="configured"
+
 request_token() {
+  local client_id="$1"
+  local client_secret="$2"
   local response
   local body
   local status
+  local sanitized_body
 
   response="$(
     curl -sS -w '\n%{http_code}' \
       -X POST "https://${SHOPIFY_STORE_DOMAIN}/admin/oauth/access_token" \
       -H 'Content-Type: application/x-www-form-urlencoded' \
       --data-urlencode 'grant_type=client_credentials' \
-      --data-urlencode "client_id=${SHOPIFY_CLIENT_ID}" \
-      --data-urlencode "client_secret=${SHOPIFY_CLIENT_SECRET}"
+      --data-urlencode "client_id=${client_id}" \
+      --data-urlencode "client_secret=${client_secret}"
   )"
 
   status="$(printf '%s\n' "$response" | tail -n1)"
@@ -50,7 +56,8 @@ request_token() {
   if [[ "$status" != "200" ]]; then
     echo "Token exchange failed: HTTP ${status}" >&2
     if printf '%s' "$body" | jq -e . >/dev/null 2>&1; then
-      printf '%s\n' "$body" | jq -r '.error_description // .error // .errors // .message // tostring' >&2
+      last_token_error="$(printf '%s\n' "$body" | jq -r '.error_description // .error // .errors // .message // tostring')"
+      printf '%s\n' "$last_token_error" >&2
     else
       sanitized_body="$(
         printf '%s\n' "$body" \
@@ -58,9 +65,12 @@ request_token() {
           | tr '\n' ' ' \
           | sed -E 's/<[^>]+>/ /g; s/&quot;/"/g; s/&amp;/\&/g; s/[[:space:]]+/ /g'
       )"
-      printf '%s\n' "$sanitized_body" \
-        | sed -nE 's/.*(Oauth error [A-Za-z0-9_]+: [^.]+).*/\1/p' \
-        | head -n1 >&2 || true
+      last_token_error="$(
+        printf '%s\n' "$sanitized_body" \
+          | sed -nE 's/.*(Oauth error [A-Za-z0-9_]+: [^.]+).*/\1/p' \
+          | head -n1
+      )"
+      printf '%s\n' "$last_token_error" >&2 || true
     fi
     return 1
   fi
@@ -110,11 +120,20 @@ if [[ -n "$SHOPIFY_ADMIN_API_TOKEN" ]]; then
 else
   auth_mode="client_credentials"
   echo "Auth mode: client credentials grant"
-  token_response="$(request_token)"
+  if token_response="$(request_token "$SHOPIFY_CLIENT_ID" "$SHOPIFY_CLIENT_SECRET")"; then
+    detected_mapping="configured"
+  elif [[ "$last_token_error" == *"application_cannot_be_found"* ]]; then
+    echo "Detected possible swapped client id / client secret mapping; retrying with swapped values." >&2
+    token_response="$(request_token "$SHOPIFY_CLIENT_SECRET" "$SHOPIFY_CLIENT_ID")"
+    detected_mapping="swapped_runtime_values"
+  else
+    exit 1
+  fi
   access_token="$(printf '%s\n' "$token_response" | jq -r '.access_token')"
   token_scope="$(printf '%s\n' "$token_response" | jq -r '.scope')"
   token_expires_in="$(printf '%s\n' "$token_response" | jq -r '.expires_in')"
   echo "Token exchange: ok"
+  echo "Credential mapping used: ${detected_mapping}"
   echo "Granted scope: ${token_scope}"
   echo "Expires in: ${token_expires_in}s"
 fi
