@@ -1,0 +1,15 @@
+# Environment / secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# Shopify CLI session files
+.shopify/
+shopify.app.toml.bak
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

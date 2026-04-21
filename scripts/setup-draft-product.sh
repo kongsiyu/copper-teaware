@@ -3,10 +3,21 @@
 # 在 Shopify 后台创建 draft 商品 + 必要 metafield 的操作指引脚本
 # 当前阶段：Capsule Preview，sample_verified=false，不开放购买
 #
-# 前提：已安装 Shopify CLI (shopify) 并完成 shopify auth login
+# 前提：复制 .env.example 为 .env 并填入真实凭据，或在环境中设置：
+#   SHOPIFY_STORE_DOMAIN      — 如 copper-teaware.myshopify.com
+#   SHOPIFY_ADMIN_API_TOKEN   — Shopify Admin API access token（不要写入代码或 issue 评论）
 # 用法：bash scripts/setup-draft-product.sh
 
 set -euo pipefail
+
+# Load .env if present (never commit .env)
+if [[ -f "$(dirname "$0")/../.env" ]]; then
+  # shellcheck disable=SC1091
+  source "$(dirname "$0")/../.env"
+fi
+
+: "${SHOPIFY_STORE_DOMAIN:?需要设置 SHOPIFY_STORE_DOMAIN 环境变量}"
+: "${SHOPIFY_ADMIN_API_TOKEN:?需要设置 SHOPIFY_ADMIN_API_TOKEN 环境变量}"
 
 PRODUCT_HANDLE="copper-bottle-pour-over-kettle"
 PRODUCT_TITLE="紫铜水瓶手冲咖啡壶"
