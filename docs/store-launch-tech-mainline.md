@@ -218,7 +218,7 @@ read_content, write_content
 
 ### 一句话结论
 
-**技术主线已定义，Capsule Preview 技术侧已就绪；进入"实际启动店铺"阶段的唯一 blocker 是 Shopify API 凭证尚未接入。**
+**技术主线已定义且已进入可执行状态；截至 2026-04-21，Shopify Admin API 运行时接入已验收通过，当前没有技术主线级 blocker。**
 
 ### 当前状态
 
@@ -232,32 +232,41 @@ read_content, write_content
 | 邮件收集 | ✅ 骨架 Ready，待后台执行 | 需接通 Shopify 原生表单或 Klaviyo |
 | GA4 分析 | ✅ 骨架 Ready，待后台执行 | 需填入 Measurement ID |
 | Theme 静态校验 | ✅ Ready | `jq` 校验通过，`shopify theme check --path theme` 结果为 `9 files inspected with no offenses found` |
-| Shopify API 接入 | ❌ **唯一 Blocker** | 需要 board 提供 Client ID / Client Secret + store domain |
+| Shopify API 接入 | ✅ Ready | 2026-04-21 已用 `SHOPIFY_CLIENT_ID` / `SHOPIFY_CLIENT_SECRET` / `SHOPIFY_STORE_DOMAIN` 完成 `client_credentials` 换 token 与 Admin GraphQL 校验 |
 | 集合页 | ⚠️ 可用默认，待配置 | 单 SKU 阶段用默认集合页即可 |
 | 政策页 | ⚠️ 待填写 | 需运营填写政策内容 |
 
-### 唯一 Blocker
+### 当前收口结论
 
-**Board 需要提供 Shopify Dev Dashboard Client ID / Client Secret 和 store domain。**
+**原先的 Shopify API 凭证 blocker 已解除。**
 
-有了 API 凭证，技术侧可以：
-1. 通过 client credentials 交换 24h access token
-2. 通过 API 直接创建 draft 商品（不再依赖 CEO 手动操作）
-3. 通过 API 设置 `sample_verified=false` metafield
-3. 通过 MCP 在 agent heartbeat 中直接执行 Shopify 操作
-4. 消除 Capsule Preview 阶段遗留的所有"需 CEO/运营手动在 Shopify 后台操作"的 blocker
+2026-04-21 实测结果：
+1. 使用 `SHOPIFY_CLIENT_ID` / `SHOPIFY_CLIENT_SECRET` 对 `copper-teaware.myshopify.com` 成功完成 `client_credentials` token exchange
+2. 通过 Shopify Admin GraphQL 完成鉴权校验，Shop name 返回 `copper-teaware`
+3. Shopify canonical `myshopifyDomain` 返回 `qvw7fs-gp.myshopify.com`
+4. 运行时 sample query 可见商品数为 `1`
 
-没有 API 凭证，技术侧仍然可以推进主题代码开发，但无法自动化执行 Shopify 后台操作。
+这意味着技术侧已经具备：
+1. 在 heartbeat 中运行 Shopify Admin API 调用
+2. 通过 API 创建或更新 draft 商品
+3. 写入 `sample_verified=false` 等 metafield
+4. 继续推进 MCP 或脚本化后台操作，不再依赖“先补接入项”
+
+当前剩余的是执行待办，不是技术主线 blocker：
+- 在 Shopify Admin 创建并绑定 `preview-stage` / `research-notes` / `faq` 页面
+- 创建导航菜单并挂到主题
+- 上传 Hero 主图
+- 填写政策页内容
+- 配置 GA4 Measurement ID
 
 ### 下一步行动
 
 | 优先级 | 行动 | 负责方 | 阻塞条件 |
 | --- | --- | --- | --- |
-| P0 | 提供 Shopify Client ID / Client Secret + store domain | Board / CEO | 无阻塞，立即可操作 |
-| P1 | 通过 API 创建 draft 商品 + 设置 metafield | CTO | 依赖 P0 |
-| P1 | 在 Shopify Admin 创建 `preview-stage` / `research-notes` / `faq` 页面并绑定模板 | CEO / 运营 | 无阻塞 |
-| P1 | 在 Shopify Admin 创建导航菜单 | CEO / 运营 | 无阻塞 |
+| P0 | 通过 API 创建 draft 商品 + 设置 metafield | CTO | Shopify 凭据已就位，可直接执行 |
+| P0 | 在 Shopify Admin 创建 `preview-stage` / `research-notes` / `faq` 页面并绑定模板 | CEO / 运营 | 无阻塞 |
+| P0 | 在 Shopify Admin 创建导航菜单 | CEO / 运营 | 无阻塞 |
 | P1 | 上传 Hero 主图到 Shopify Files | 运营 | 需要图册主图 |
-| P2 | 填写政策页内容 | 运营 | 无阻塞 |
-| P2 | 配置 GA4 Measurement ID | CEO / 运营 | 需要 GA4 Property |
-| P3 | 接通 Klaviyo（升级邮件收集） | CTO + 运营 | 依赖 P0 |
+| P1 | 填写政策页内容 | 运营 | 无阻塞 |
+| P1 | 配置 GA4 Measurement ID | CEO / 运营 | 需要 GA4 Property |
+| P2 | 接通 Klaviyo（升级邮件收集） | CTO + 运营 | 非当前阶段 blocker |
